@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Ticket</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    input {
+      display: block;
+      margin-bottom: 15px;
+      padding: 10px;
+      width: 300px;
+    }
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    #ticketCanvas {
+      margin-top: 30px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Add Ticket</h2>
+
+<input type="text" id="full_name" placeholder="Full Name" />
+<input type="text" id="phone_number" placeholder="Phone Number" />
+<input type="text" id="mpesa_code" placeholder="M-Pesa Code" />
+
+<button onclick="createTicket()">Create Ticket</button>
+
+<canvas id="ticketCanvas" width="800" height="400"></canvas>
+
+<script>
+  const supabase = window.supabase.createClient(
+    "https://rpkntkivikvwisgwgkzx.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwa250a2l2aWt2d2lzZ3dna3p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDk5NjgsImV4cCI6MjA4ODEyNTk2OH0._EQI_iPpCGCjXmamFnACTSjy57X_JGBcKNx4vbsRw_8"
+  );
+
+  async function createTicket() {
+    const full_name = document.getElementById("full_name").value;
+    const phone_number = document.getElementById("phone_number").value;
+    const mpesa_code = document.getElementById("mpesa_code").value;
+
+    if (!full_name || !phone_number || !mpesa_code) {
+      alert("Fill all fields");
+      return;
+    }
+
+    const ticket_id = "TIX-" + Math.floor(Math.random() * 100000);
+    const qr_token = ticket_id + "-" + mpesa_code;
+
+    const { error } = await supabase.from("tickets").insert([
+      {
+        full_name,
+        phone_number,
+        mpesa_code,
+        ticket_id,
+        qr_token
+      }
+    ]);
+
+    if (error) {
+      alert("Error saving ticket");
+      console.log(error);
+      return;
+    }
+
+    generateTicketImage(full_name, qr_token);
+  }
+
+  function generateTicketImage(name, qr_token) {
+    const canvas = document.getElementById("ticketCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const background = new Image();
+    background.src = "background.png"; // put this in same folder
+
+    background.onload = function () {
+      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+      ctx.font = "30px Arial";
+      ctx.fillStyle = "black";
+      ctx.fillText(name, 50, 350);
+
+      QRCode.toDataURL(qr_token, function (err, url) {
+        const qrImage = new Image();
+        qrImage.src = url;
+
+        qrImage.onload = function () {
+          ctx.drawImage(qrImage, 600, 200, 150, 150);
+        };
+      });
+    };
+  }
+</script>
+
+</body>
+</html>
