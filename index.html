@@ -94,6 +94,8 @@
             cursor: pointer;
         }
 
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -181,7 +183,7 @@
             <input type="text" id="man-code" placeholder="M-Pesa Code" style="text-transform: uppercase;">
             <input type="text" id="man-name" placeholder="Full Name">
             <input type="text" id="man-phone" placeholder="Phone Number">
-            <button onclick="addTicket()">Confirm Payment & Add to List</button>
+            <button id="add-btn" onclick="addTicket()">Confirm Payment & Add to List</button>
         </div>
 
         <div class="card">
@@ -204,8 +206,7 @@
 </div>
 
 <script>
-    // REPLACE THESE WITH YOUR NEW PROJECT DETAILS
-    const SUPABASE_URL = 'sb_publishable_8QtVVuPsExFpd8cCIYmMng_Fgo900U-';
+    const SUPABASE_URL = 'https://odfsxslcksvqjcucevhk.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kZnN4c2xja3N2cWpjdWNldmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzUxNDAsImV4cCI6MjA4ODExMTE0MH0.1jNL0TWUNYxsEb3ar8MzGu-gnlzt3w28bgpV42XQcfM';
     const ADMIN_PASSWORD = 'FP26'; 
 
@@ -237,6 +238,7 @@
 
     async function initApp() {
         await refreshData();
+        // Enable Realtime updates
         supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => refreshData()).subscribe();
     }
 
@@ -249,11 +251,19 @@
     }
 
     async function addTicket() {
-        const code = document.getElementById('man-code').value.trim().toUpperCase();
-        const name = document.getElementById('man-name').value.trim();
-        const phone = document.getElementById('man-phone').value.trim();
+        const btn = document.getElementById('add-btn');
+        const codeInput = document.getElementById('man-code');
+        const nameInput = document.getElementById('man-name');
+        const phoneInput = document.getElementById('man-phone');
+
+        const code = codeInput.value.trim().toUpperCase();
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
 
         if (!code || !name) return alert("Code and Name are required!");
+
+        btn.disabled = true;
+        btn.innerText = "Registering...";
 
         try {
             const { error } = await supabaseClient.from('tickets').insert([{ mpesa_code: code, name: name, phone: phone }]);
@@ -261,12 +271,16 @@
                 if (error.code === '23505') alert(`Code ${code} is already registered!`);
                 else alert("DB Error: " + error.message);
             } else {
-                // Clear fields
-                document.getElementById('man-code').value = '';
-                document.getElementById('man-name').value = '';
-                document.getElementById('man-phone').value = '';
+                codeInput.value = '';
+                nameInput.value = '';
+                phoneInput.value = '';
             }
-        } catch (err) { alert("Network Error: Failed to reach database."); }
+        } catch (err) { 
+            alert("Network Error: Failed to reach database."); 
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Confirm Payment & Add to List";
+        }
     }
 
     async function checkIn(mpesaCode) {
