@@ -40,26 +40,18 @@
             z-index: 100;
         }
 
-        header h1 { margin: 0; font-size: 1.2rem; }
-
-        /* Connection Status Bar */
         #status-bar {
             width: 100%;
             padding: 5px;
             text-align: center;
             font-size: 0.7rem;
             font-weight: bold;
-            text-transform: uppercase;
-            display: none; /* Only shows in dashboard */
+            display: none;
         }
         .online { background: var(--success); color: white; }
         .offline { background: var(--error); color: white; }
 
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 0 15px;
-        }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
 
         .card {
             background: var(--card-bg);
@@ -156,7 +148,7 @@
 <header>
     <h1>GEMS IN THE RUFF: ADMIN</h1>
 </header>
-<div id="status-bar" class="online">System Online</div>
+<div id="status-bar">System Online</div>
 
 <div class="container">
     
@@ -176,7 +168,7 @@
         </div>
 
         <div class="card">
-            <h3>QR Scanner</h3>
+            <h3>QR Scanner (Verification)</h3>
             <div id="video-container">
                 <canvas id="canvas" hidden></canvas>
                 <div id="loadingMessage" style="padding: 20px; text-align: center;">Ready to Scan</div>
@@ -187,22 +179,22 @@
 
         <div class="card">
             <h3>Register New Sale</h3>
-            <input type="text" id="man-code" placeholder="M-Pesa Code" style="text-transform: uppercase;">
-            <input type="text" id="man-name" placeholder="Full Name">
-            <input type="text" id="man-phone" placeholder="Phone Number">
-            <button onclick="addTicket()">Confirm & Add to List</button>
+            <input type="text" id="man-code" placeholder="M-Pesa Transaction Code" style="text-transform: uppercase;">
+            <input type="text" id="man-name" placeholder="Attendee Full Name">
+            <input type="text" id="man-phone" placeholder="Phone Number (Sender)">
+            <button onclick="addTicket()">Confirm Payment & Add to List</button>
         </div>
 
         <div class="card">
-            <h3>Attendee List</h3>
-            <input type="text" id="search-input" placeholder="Search..." onkeyup="filterTable()">
+            <h3>Live Attendee List</h3>
+            <input type="text" id="search-input" placeholder="Search names or codes..." onkeyup="filterTable()">
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>Code</th>
+                            <th>M-Pesa Code</th>
                             <th>Name</th>
-                            <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="tickets-body"></tbody>
@@ -219,15 +211,12 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Update connection status bar
     function updateOnlineStatus() {
         const bar = document.getElementById('status-bar');
         if (navigator.onLine) {
-            bar.className = 'online';
-            bar.innerText = 'System Online';
+            bar.className = 'online'; bar.innerText = 'Connected to Database';
         } else {
-            bar.className = 'offline';
-            bar.innerText = '⚠️ Offline - Check Internet';
+            bar.className = 'offline'; bar.innerText = '⚠️ Offline - Using Local Cache';
         }
     }
 
@@ -235,22 +224,20 @@
     window.addEventListener('offline', updateOnlineStatus);
 
     function checkAuth() {
-        const input = document.getElementById('admin-pass').value;
-        if (input === ADMIN_PASSWORD) {
+        if (document.getElementById('admin-pass').value === ADMIN_PASSWORD) {
             document.getElementById('auth-view').remove(); 
             document.getElementById('admin-dashboard').classList.add('active');
             document.getElementById('status-bar').style.display = 'block';
             updateOnlineStatus();
             initApp();
-        } else {
-            alert("Wrong Password");
-        }
+        } else { alert("Access Denied"); }
     }
 
     let ticketList = [];
 
     async function initApp() {
         await refreshData();
+        // Set up real-time listener: The list updates automatically when database changes
         supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => refreshData()).subscribe();
     }
 
@@ -258,61 +245,35 @@
         try {
             const { data, error } = await supabaseClient.from('tickets').select('*').order('id', { ascending: false });
             if (error) throw error;
-            if (data) { 
-                ticketList = data; 
-                renderDisplay(); 
-            }
-        } catch (err) {
-            console.error("Fetch error:", err);
-        }
+            if (data) { ticketList = data; renderDisplay(); }
+        } catch (err) { console.error("Sync error:", err); }
     }
 
     async function addTicket() {
-        const codeInput = document.getElementById('man-code');
-        const nameInput = document.getElementById('man-name');
-        const phoneInput = document.getElementById('man-phone');
+        const code = document.getElementById('man-code').value.trim().toUpperCase();
+        const name = document.getElementById('man-name').value.trim();
+        const phone = document.getElementById('man-phone').value.trim();
 
-        const code = codeInput.value.trim().toUpperCase();
-        const name = nameInput.value.trim();
-        const phone = phoneInput.value.trim();
-
-        if (!code || !name) {
-            alert("M-Pesa Code and Name are required!");
-            return;
-        }
+        if (!code || !name) return alert("Fill in M-Pesa Code and Name!");
 
         try {
-            const { error } = await supabaseClient
-                .from('tickets')
-                .insert([{ mpesa_code: code, name: name, phone: phone }]);
-
+            const { error } = await supabaseClient.from('tickets').insert([{ mpesa_code: code, name: name, phone: phone }]);
             if (error) {
-                if (error.code === '23505') {
-                    alert(`⚠️ Duplicate: The code "${code}" is already registered.`);
-                } else {
-                    alert("Database Error: " + error.message);
-                }
+                if (error.code === '23505') alert(`Code ${code} is already used!`);
+                else alert("DB Error: " + error.message);
             } else {
-                codeInput.value = '';
-                nameInput.value = '';
-                phoneInput.value = '';
+                document.getElementById('man-code').value = '';
+                document.getElementById('man-name').value = '';
+                document.getElementById('man-phone').value = '';
             }
-        } catch (err) {
-            alert("❌ Network Error: Failed to fetch. Please check your internet connection.");
-        }
+        } catch (err) { alert("Network Error: Failed to reach Supabase. Check internet."); }
     }
 
     async function checkIn(mpesaCode) {
         try {
-            const { error } = await supabaseClient
-                .from('tickets')
-                .update({ status: 'entered', entered_at: new Date().toISOString() })
-                .eq('mpesa_code', mpesaCode);
-            
+            const { error } = await supabaseClient.from('tickets').update({ status: 'entered', entered_at: new Date().toISOString() }).eq('mpesa_code', mpesaCode);
             if (error) throw error;
-        } catch (err) {
-            alert("Check-in failed: Network connection lost.");
-        }
+        } catch (err) { alert("Check-in failed. Are you online?"); }
     }
 
     function renderDisplay() {
@@ -328,8 +289,8 @@
                 <td>${t.name}</td>
                 <td>
                     ${t.status === 'paid' ? 
-                    `<button onclick="checkIn('${t.mpesa_code}')" style="padding:5px; font-size:0.7rem; margin:0; width:auto;">Check In</button>` : 
-                    `<span style="color:var(--error); font-weight:bold;">ENTERED</span>`}
+                    `<button onclick="checkIn('${t.mpesa_code}')" style="padding:5px; font-size:0.7rem; margin:0; width:auto;">Grant Entry</button>` : 
+                    `<span style="color:var(--error); font-weight:bold;">IN</span>`}
                 </td>
             `;
             tbody.appendChild(tr);
@@ -340,7 +301,6 @@
         document.getElementById('stat-total').innerText = ticketList.length;
     }
 
-    let vStream = null;
     const v = document.createElement("video");
     const canvasElement = document.getElementById("canvas");
     const canvas = canvasElement.getContext("2d");
@@ -348,13 +308,11 @@
 
     function startScanner() {
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => {
-            vStream = s; v.srcObject = s; v.setAttribute("playsinline", true); v.play();
+            v.srcObject = s; v.setAttribute("playsinline", true); v.play();
             requestAnimationFrame(tick);
             document.getElementById('start-scan-btn').style.display = 'none';
             canvasElement.hidden = false;
             document.getElementById('loadingMessage').hidden = true;
-        }).catch(err => {
-            alert("Camera Error: " + err.message);
         });
     }
 
@@ -365,29 +323,27 @@
             const imgData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             const qr = jsQR(imgData.data, imgData.width, imgData.height);
             if (qr) {
-                processCode(qr.data);
-                setTimeout(() => requestAnimationFrame(tick), 3000);
+                processQR(qr.data);
+                setTimeout(() => requestAnimationFrame(tick), 3000); // 3 sec pause after scan
                 return;
             }
         }
         requestAnimationFrame(tick);
     }
 
-    function processCode(data) {
+    function processQR(data) {
         const cleanData = data.trim().toUpperCase();
         const t = ticketList.find(x => x.mpesa_code === cleanData);
         fb.style.display = 'block';
         if (!t) { 
             fb.style.background = 'var(--error)'; 
-            fb.innerText = "❌ UNKNOWN CODE"; 
-        }
-        else if (t.status === 'entered') { 
+            fb.innerText = `❌ INVALID: ${cleanData}`; 
+        } else if (t.status === 'entered') { 
             fb.style.background = 'var(--warning)'; 
-            fb.innerText = `⚠️ ALREADY IN: ${t.name}`; 
-        }
-        else { 
+            fb.innerText = `⚠️ ALREADY USED: ${t.name}`; 
+        } else { 
             fb.style.background = 'var(--success)'; 
-            fb.innerText = `✅ WELCOME, ${t.name}!`; 
+            fb.innerText = `✅ VALID: ${t.name} (${cleanData})`; 
             checkIn(cleanData); 
         }
     }
