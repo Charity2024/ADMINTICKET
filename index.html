@@ -169,8 +169,8 @@
 </div>
 
 <script>
-    const SUPABASE_URL = 'https://bsocoypqoyflklpcrpkc.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzb2NveXBxb3lmbGtscGNycGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDE2OTUsImV4cCI6MjA4ODExNzY5NX0.3wpzjxltdqFi1nxbrFkzBzxz25ODIfpRDmL-t5c6u-c';
+    const SUPABASE_URL = 'https://doeidcqrsthimqqlgpdu.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvZWlkY3Fyc3RoaW1xcWxncGR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQxOTgsImV4cCI6MjA4ODEyMDE5OH0.9Z9gbCBDNJu69dGgPjSWcl5BBiuWGuiziEIH88qNOes';
     const ADMIN_PASSWORD = 'FP26'; 
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -193,7 +193,7 @@
 
     async function refreshData() {
         try {
-            const { data, error } = await supabaseClient.from('tickets').select('*').order('id', { ascending: false });
+            const { data, error } = await supabaseClient.from('tickets').select('*').order('created_at', { ascending: false });
             if (error) throw error;
             ticketList = data || [];
             renderDisplay();
