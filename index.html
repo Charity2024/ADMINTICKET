@@ -42,6 +42,19 @@
 
         header h1 { margin: 0; font-size: 1.2rem; }
 
+        /* Connection Status Bar */
+        #status-bar {
+            width: 100%;
+            padding: 5px;
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: none; /* Only shows in dashboard */
+        }
+        .online { background: var(--success); color: white; }
+        .offline { background: var(--error); color: white; }
+
         .container {
             max-width: 900px;
             margin: 20px auto;
@@ -143,6 +156,7 @@
 <header>
     <h1>GEMS IN THE RUFF: ADMIN</h1>
 </header>
+<div id="status-bar" class="online">System Online</div>
 
 <div class="container">
     
@@ -205,11 +219,28 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Update connection status bar
+    function updateOnlineStatus() {
+        const bar = document.getElementById('status-bar');
+        if (navigator.onLine) {
+            bar.className = 'online';
+            bar.innerText = 'System Online';
+        } else {
+            bar.className = 'offline';
+            bar.innerText = '⚠️ Offline - Check Internet';
+        }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
     function checkAuth() {
         const input = document.getElementById('admin-pass').value;
         if (input === ADMIN_PASSWORD) {
             document.getElementById('auth-view').remove(); 
             document.getElementById('admin-dashboard').classList.add('active');
+            document.getElementById('status-bar').style.display = 'block';
+            updateOnlineStatus();
             initApp();
         } else {
             alert("Wrong Password");
@@ -224,12 +255,15 @@
     }
 
     async function refreshData() {
-        const { data, error } = await supabaseClient.from('tickets').select('*').order('id', { ascending: false });
-        if (error) {
-            console.error("Fetch error:", error);
-        } else if (data) { 
-            ticketList = data; 
-            renderDisplay(); 
+        try {
+            const { data, error } = await supabaseClient.from('tickets').select('*').order('id', { ascending: false });
+            if (error) throw error;
+            if (data) { 
+                ticketList = data; 
+                renderDisplay(); 
+            }
+        } catch (err) {
+            console.error("Fetch error:", err);
         }
     }
 
@@ -247,33 +281,38 @@
             return;
         }
 
-        const { error } = await supabaseClient
-            .from('tickets')
-            .insert([{ mpesa_code: code, name: name, phone: phone }]);
+        try {
+            const { error } = await supabaseClient
+                .from('tickets')
+                .insert([{ mpesa_code: code, name: name, phone: phone }]);
 
-        if (error) {
-            // Specific handling for duplicate code error (PostgreSQL error 23505)
-            if (error.code === '23505') {
-                alert(`Error: The code "${code}" has already been registered.`);
+            if (error) {
+                if (error.code === '23505') {
+                    alert(`⚠️ Duplicate: The code "${code}" is already registered.`);
+                } else {
+                    alert("Database Error: " + error.message);
+                }
             } else {
-                alert("Database Error: " + error.message);
-                console.error(error);
+                codeInput.value = '';
+                nameInput.value = '';
+                phoneInput.value = '';
             }
-        } else {
-            // Success
-            codeInput.value = '';
-            nameInput.value = '';
-            phoneInput.value = '';
+        } catch (err) {
+            alert("❌ Network Error: Failed to fetch. Please check your internet connection.");
         }
     }
 
     async function checkIn(mpesaCode) {
-        const { error } = await supabaseClient
-            .from('tickets')
-            .update({ status: 'entered', entered_at: new Date().toISOString() })
-            .eq('mpesa_code', mpesaCode);
-        
-        if (error) alert("Check-in failed: " + error.message);
+        try {
+            const { error } = await supabaseClient
+                .from('tickets')
+                .update({ status: 'entered', entered_at: new Date().toISOString() })
+                .eq('mpesa_code', mpesaCode);
+            
+            if (error) throw error;
+        } catch (err) {
+            alert("Check-in failed: Network connection lost.");
+        }
     }
 
     function renderDisplay() {
