@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gems in the Ruff | Admin Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #1a0a05; 
+            --accent-gold: #f7941d; 
+            --accent-red: #8b1d1d; 
+            --text-main: #ffffff;
+            --card-bg: #2d1610;
+            --success: #4caf50;
+            --error: #e53935;
+            --warning: #fbc02d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            background-color: var(--bg-dark);
+            background-image: linear-gradient(180deg, #2d1610 0%, #1a0a05 100%);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 2px solid var(--accent-gold);
+            padding: 1rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 { margin: 0; font-size: 1.2rem; }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(247, 148, 29, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            margin-top: 0;
+            font-size: 1rem;
+            border-bottom: 1px solid rgba(247, 148, 29, 0.2);
+            padding-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #1a0a05;
+            border: 1px solid var(--accent-gold);
+            border-radius: 6px;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            background: linear-gradient(90deg, var(--accent-gold), #d47a16);
+            color: black;
+            border: none;
+            border-radius: 6px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            text-align: center;
+            border-top: 2px solid var(--accent-gold);
+        }
+
+        .stat-box div { font-size: 1.5rem; font-weight: bold; }
+        .stat-box small { text-transform: uppercase; opacity: 0.6; font-size: 0.6rem; }
+
+        #video-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 10px auto;
+            border: 2px solid var(--accent-gold);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #canvas { width: 100%; display: block; }
+
+        .scan-feedback {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem;}
+        th { color: var(--accent-gold); text-align: left; padding: 10px; text-transform: uppercase; border-bottom: 1px solid var(--accent-gold); }
+        td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        .view { display: none; }
+        .view.active { display: block; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>GEMS IN THE RUFF: ADMIN</h1>
+</header>
+
+<div class="container">
+    
+    <div id="auth-view" class="view active">
+        <div class="card" style="max-width: 400px; margin: 40px auto;">
+            <h3>Organizer Login</h3>
+            <input type="password" id="admin-pass" placeholder="Enter Access Code">
+            <button onclick="checkAuth()">Enter Dashboard</button>
+        </div>
+    </div>
+
+    <div id="admin-dashboard" class="view">
+        <div class="stats-grid">
+            <div class="stat-box"><small>In</small><div id="stat-entered">0</div></div>
+            <div class="stat-box"><small>Paid</small><div id="stat-paid">0</div></div>
+            <div class="stat-box"><small>Total</small><div id="stat-total">0</div></div>
+        </div>
+
+        <div class="card">
+            <h3>QR Scanner</h3>
+            <div id="video-container">
+                <canvas id="canvas" hidden></canvas>
+                <div id="loadingMessage" style="padding: 20px; text-align: center;">Ready to Scan</div>
+            </div>
+            <div id="scan-feedback" class="scan-feedback"></div>
+            <button id="start-scan-btn" onclick="startScanner()" style="background: var(--accent-red); color: white;">Open Camera</button>
+        </div>
+
+        <div class="card">
+            <h3>Register New Sale</h3>
+            <input type="text" id="man-code" placeholder="M-Pesa Code" style="text-transform: uppercase;">
+            <input type="text" id="man-name" placeholder="Full Name">
+            <input type="text" id="man-phone" placeholder="Phone Number">
+            <button onclick="addTicket()">Confirm & Add to List</button>
+        </div>
+
+        <div class="card">
+            <h3>Attendee List</h3>
+            <input type="text" id="search-input" placeholder="Search..." onkeyup="filterTable()">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tickets-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://uhhkrmtkvusdygnwwyae.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGtybXRrdnVzZHlnd253eWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzU2MjAsImV4cCI6MjA4ODExMTYyMH0.tHWoTpFuMo8zL_sIuDKgTSt4z1fn15ehKc6Y0C65WVo';
+    const ADMIN_PASSWORD = 'FP26'; 
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function checkAuth() {
+        const input = document.getElementById('admin-pass').value;
+        if (input === ADMIN_PASSWORD) {
+            document.getElementById('auth-view').remove(); 
+            document.getElementById('admin-dashboard').classList.add('active');
+            initApp();
+        } else {
+            alert("Wrong Password");
+        }
+    }
+
+    let ticketList = [];
+
+    async function initApp() {
+        await refreshData();
+        supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => refreshData()).subscribe();
+    }
+
+    async function refreshData() {
+        const { data, error } = await supabaseClient.from('tickets').select('*').order('id', { ascending: false });
+        if (error) {
+            console.error("Fetch error:", error);
+        } else if (data) { 
+            ticketList = data; 
+            renderDisplay(); 
+        }
+    }
+
+    async function addTicket() {
+        const codeInput = document.getElementById('man-code');
+        const nameInput = document.getElementById('man-name');
+        const phoneInput = document.getElementById('man-phone');
+
+        const code = codeInput.value.trim().toUpperCase();
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
+
+        if (!code || !name) {
+            alert("M-Pesa Code and Name are required!");
+            return;
+        }
+
+        const { error } = await supabaseClient
+            .from('tickets')
+            .insert([{ mpesa_code: code, name: name, phone: phone }]);
+
+        if (error) {
+            // Specific handling for duplicate code error (PostgreSQL error 23505)
+            if (error.code === '23505') {
+                alert(`Error: The code "${code}" has already been registered.`);
+            } else {
+                alert("Database Error: " + error.message);
+                console.error(error);
+            }
+        } else {
+            // Success
+            codeInput.value = '';
+            nameInput.value = '';
+            phoneInput.value = '';
+        }
+    }
+
+    async function checkIn(mpesaCode) {
+        const { error } = await supabaseClient
+            .from('tickets')
+            .update({ status: 'entered', entered_at: new Date().toISOString() })
+            .eq('mpesa_code', mpesaCode);
+        
+        if (error) alert("Check-in failed: " + error.message);
+    }
+
+    function renderDisplay() {
+        const tbody = document.getElementById('tickets-body');
+        tbody.innerHTML = '';
+        let entered = 0, paid = 0;
+
+        ticketList.forEach(t => {
+            if (t.status === 'entered') entered++; else paid++;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="color:var(--accent-gold); font-family:monospace;">${t.mpesa_code}</td>
+                <td>${t.name}</td>
+                <td>
+                    ${t.status === 'paid' ? 
+                    `<button onclick="checkIn('${t.mpesa_code}')" style="padding:5px; font-size:0.7rem; margin:0; width:auto;">Check In</button>` : 
+                    `<span style="color:var(--error); font-weight:bold;">ENTERED</span>`}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('stat-entered').innerText = entered;
+        document.getElementById('stat-paid').innerText = paid;
+        document.getElementById('stat-total').innerText = ticketList.length;
+    }
+
+    let vStream = null;
+    const v = document.createElement("video");
+    const canvasElement = document.getElementById("canvas");
+    const canvas = canvasElement.getContext("2d");
+    const fb = document.getElementById("scan-feedback");
+
+    function startScanner() {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => {
+            vStream = s; v.srcObject = s; v.setAttribute("playsinline", true); v.play();
+            requestAnimationFrame(tick);
+            document.getElementById('start-scan-btn').style.display = 'none';
+            canvasElement.hidden = false;
+            document.getElementById('loadingMessage').hidden = true;
+        }).catch(err => {
+            alert("Camera Error: " + err.message);
+        });
+    }
+
+    function tick() {
+        if (v.readyState === v.HAVE_ENOUGH_DATA) {
+            canvasElement.height = v.videoHeight; canvasElement.width = v.videoWidth;
+            canvas.drawImage(v, 0, 0, canvasElement.width, canvasElement.height);
+            const imgData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            const qr = jsQR(imgData.data, imgData.width, imgData.height);
+            if (qr) {
+                processCode(qr.data);
+                setTimeout(() => requestAnimationFrame(tick), 3000);
+                return;
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function processCode(data) {
+        const cleanData = data.trim().toUpperCase();
+        const t = ticketList.find(x => x.mpesa_code === cleanData);
+        fb.style.display = 'block';
+        if (!t) { 
+            fb.style.background = 'var(--error)'; 
+            fb.innerText = "❌ UNKNOWN CODE"; 
+        }
+        else if (t.status === 'entered') { 
+            fb.style.background = 'var(--warning)'; 
+            fb.innerText = `⚠️ ALREADY IN: ${t.name}`; 
+        }
+        else { 
+            fb.style.background = 'var(--success)'; 
+            fb.innerText = `✅ WELCOME, ${t.name}!`; 
+            checkIn(cleanData); 
+        }
+    }
+
+    function filterTable() {
+        const q = document.getElementById('search-input').value.toLowerCase();
+        const rows = document.querySelectorAll('#tickets-body tr');
+        rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none');
+    }
+</script>
+</body>
+</html>
