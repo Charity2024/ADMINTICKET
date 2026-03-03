@@ -24,7 +24,6 @@
             background-color: var(--bg-dark);
             background-image: linear-gradient(180deg, #2d1610 0%, #1a0a05 100%);
             color: var(--text-main);
-            line-height: 1.6;
             min-height: 100vh;
         }
 
@@ -168,7 +167,7 @@
         </div>
 
         <div class="card">
-            <h3>QR Scanner (Verification)</h3>
+            <h3>QR Scanner</h3>
             <div id="video-container">
                 <canvas id="canvas" hidden></canvas>
                 <div id="loadingMessage" style="padding: 20px; text-align: center;">Ready to Scan</div>
@@ -179,20 +178,20 @@
 
         <div class="card">
             <h3>Register New Sale</h3>
-            <input type="text" id="man-code" placeholder="M-Pesa Transaction Code" style="text-transform: uppercase;">
-            <input type="text" id="man-name" placeholder="Attendee Full Name">
-            <input type="text" id="man-phone" placeholder="Phone Number (Sender)">
+            <input type="text" id="man-code" placeholder="M-Pesa Code" style="text-transform: uppercase;">
+            <input type="text" id="man-name" placeholder="Full Name">
+            <input type="text" id="man-phone" placeholder="Phone Number">
             <button onclick="addTicket()">Confirm Payment & Add to List</button>
         </div>
 
         <div class="card">
-            <h3>Live Attendee List</h3>
-            <input type="text" id="search-input" placeholder="Search names or codes..." onkeyup="filterTable()">
+            <h3>Attendance List</h3>
+            <input type="text" id="search-input" placeholder="Search..." onkeyup="filterTable()">
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>M-Pesa Code</th>
+                            <th>Code</th>
                             <th>Name</th>
                             <th>Action</th>
                         </tr>
@@ -205,8 +204,9 @@
 </div>
 
 <script>
-    const SUPABASE_URL = 'https://uhhkrmtkvusdygnwwyae.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGtybXRrdnVzZHlnd253eWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzU2MjAsImV4cCI6MjA4ODExMTYyMH0.tHWoTpFuMo8zL_sIuDKgTSt4z1fn15ehKc6Y0C65WVo';
+    // REPLACE THESE WITH YOUR NEW PROJECT DETAILS
+    const SUPABASE_URL = 'sb_publishable_8QtVVuPsExFpd8cCIYmMng_Fgo900U-';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kZnN4c2xja3N2cWpjdWNldmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzUxNDAsImV4cCI6MjA4ODExMTE0MH0.1jNL0TWUNYxsEb3ar8MzGu-gnlzt3w28bgpV42XQcfM';
     const ADMIN_PASSWORD = 'FP26'; 
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -216,7 +216,7 @@
         if (navigator.onLine) {
             bar.className = 'online'; bar.innerText = 'Connected to Database';
         } else {
-            bar.className = 'offline'; bar.innerText = '⚠️ Offline - Using Local Cache';
+            bar.className = 'offline'; bar.innerText = '⚠️ Offline - Check Internet';
         }
     }
 
@@ -237,7 +237,6 @@
 
     async function initApp() {
         await refreshData();
-        // Set up real-time listener: The list updates automatically when database changes
         supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => refreshData()).subscribe();
     }
 
@@ -246,7 +245,7 @@
             const { data, error } = await supabaseClient.from('tickets').select('*').order('id', { ascending: false });
             if (error) throw error;
             if (data) { ticketList = data; renderDisplay(); }
-        } catch (err) { console.error("Sync error:", err); }
+        } catch (err) { console.error("Fetch error:", err); }
     }
 
     async function addTicket() {
@@ -254,26 +253,27 @@
         const name = document.getElementById('man-name').value.trim();
         const phone = document.getElementById('man-phone').value.trim();
 
-        if (!code || !name) return alert("Fill in M-Pesa Code and Name!");
+        if (!code || !name) return alert("Code and Name are required!");
 
         try {
             const { error } = await supabaseClient.from('tickets').insert([{ mpesa_code: code, name: name, phone: phone }]);
             if (error) {
-                if (error.code === '23505') alert(`Code ${code} is already used!`);
+                if (error.code === '23505') alert(`Code ${code} is already registered!`);
                 else alert("DB Error: " + error.message);
             } else {
+                // Clear fields
                 document.getElementById('man-code').value = '';
                 document.getElementById('man-name').value = '';
                 document.getElementById('man-phone').value = '';
             }
-        } catch (err) { alert("Network Error: Failed to reach Supabase. Check internet."); }
+        } catch (err) { alert("Network Error: Failed to reach database."); }
     }
 
     async function checkIn(mpesaCode) {
         try {
             const { error } = await supabaseClient.from('tickets').update({ status: 'entered', entered_at: new Date().toISOString() }).eq('mpesa_code', mpesaCode);
             if (error) throw error;
-        } catch (err) { alert("Check-in failed. Are you online?"); }
+        } catch (err) { alert("Update failed. Check your internet."); }
     }
 
     function renderDisplay() {
@@ -323,15 +323,15 @@
             const imgData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             const qr = jsQR(imgData.data, imgData.width, imgData.height);
             if (qr) {
-                processQR(qr.data);
-                setTimeout(() => requestAnimationFrame(tick), 3000); // 3 sec pause after scan
+                processCode(qr.data);
+                setTimeout(() => requestAnimationFrame(tick), 3000);
                 return;
             }
         }
         requestAnimationFrame(tick);
     }
 
-    function processQR(data) {
+    function processCode(data) {
         const cleanData = data.trim().toUpperCase();
         const t = ticketList.find(x => x.mpesa_code === cleanData);
         fb.style.display = 'block';
@@ -340,10 +340,10 @@
             fb.innerText = `❌ INVALID: ${cleanData}`; 
         } else if (t.status === 'entered') { 
             fb.style.background = 'var(--warning)'; 
-            fb.innerText = `⚠️ ALREADY USED: ${t.name}`; 
+            fb.innerText = `⚠️ ALREADY IN: ${t.name}`; 
         } else { 
             fb.style.background = 'var(--success)'; 
-            fb.innerText = `✅ VALID: ${t.name} (${cleanData})`; 
+            fb.innerText = `✅ VALID: ${t.name}`; 
             checkIn(cleanData); 
         }
     }
