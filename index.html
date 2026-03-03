@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gems in the Ruff | Admin Portal</title>
+    <title>The Salonist | Premiere Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
@@ -34,18 +34,12 @@
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 2px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            position: sticky; top: 0; z-index: 100;
         }
 
         #status-bar {
-            width: 100%;
-            padding: 5px;
-            text-align: center;
-            font-size: 0.7rem;
-            font-weight: bold;
-            display: none;
+            width: 100%; padding: 5px; text-align: center;
+            font-size: 0.7rem; font-weight: bold; display: none;
         }
         .online { background: var(--success); color: white; }
         .offline { background: var(--error); color: white; }
@@ -54,85 +48,55 @@
 
         .card {
             background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
+            padding: 20px; border-radius: 12px;
             border: 1px solid rgba(247, 148, 29, 0.2);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             margin-bottom: 20px;
         }
 
         h3 {
-            color: var(--accent-gold);
-            text-transform: uppercase;
-            margin-top: 0;
-            font-size: 1rem;
+            color: var(--accent-gold); text-transform: uppercase;
+            margin-top: 0; font-size: 1rem;
             border-bottom: 1px solid rgba(247, 148, 29, 0.2);
             padding-bottom: 8px;
         }
 
         input {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            background: #1a0a05;
-            border: 1px solid var(--accent-gold);
-            border-radius: 6px;
-            color: white;
-            box-sizing: border-box;
+            width: 100%; padding: 12px; margin: 8px 0;
+            background: #1a0a05; border: 1px solid var(--accent-gold);
+            border-radius: 6px; color: white; box-sizing: border-box;
         }
 
         button {
-            width: 100%;
-            padding: 14px;
-            margin: 8px 0;
+            width: 100%; padding: 14px; margin: 8px 0;
             background: linear-gradient(90deg, var(--accent-gold), #d47a16);
-            color: black;
-            border: none;
-            border-radius: 6px;
-            font-weight: 800;
-            text-transform: uppercase;
-            cursor: pointer;
+            color: black; border: none; border-radius: 6px;
+            font-weight: 800; text-transform: uppercase; cursor: pointer;
         }
-
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button:disabled { opacity: 0.5; }
 
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 10px; margin-bottom: 20px;
         }
 
         .stat-box {
-            padding: 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            text-align: center;
+            padding: 10px; background: rgba(0,0,0,0.3);
+            border-radius: 8px; text-align: center;
             border-top: 2px solid var(--accent-gold);
         }
-
         .stat-box div { font-size: 1.5rem; font-weight: bold; }
         .stat-box small { text-transform: uppercase; opacity: 0.6; font-size: 0.6rem; }
 
         #video-container {
-            width: 100%;
-            max-width: 400px;
-            margin: 10px auto;
-            border: 2px solid var(--accent-gold);
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
+            width: 100%; max-width: 400px; margin: 10px auto;
+            border: 2px solid var(--accent-gold); border-radius: 8px;
+            overflow: hidden; background: #000;
         }
-
         #canvas { width: 100%; display: block; }
-
         .scan-feedback {
-            padding: 15px;
-            text-align: center;
-            font-weight: bold;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
+            padding: 15px; text-align: center; font-weight: bold;
+            border-radius: 8px; margin-top: 10px; display: none;
         }
 
         .table-container { overflow-x: auto; }
@@ -147,17 +111,16 @@
 <body>
 
 <header>
-    <h1>GEMS IN THE RUFF: ADMIN</h1>
+    <h1>THE SALONIST: ADMIN</h1>
 </header>
-<div id="status-bar">System Online</div>
+<div id="status-bar">Connected</div>
 
 <div class="container">
-    
     <div id="auth-view" class="view active">
         <div class="card" style="max-width: 400px; margin: 40px auto;">
-            <h3>Organizer Login</h3>
+            <h3>Organizer Access</h3>
             <input type="password" id="admin-pass" placeholder="Enter Access Code">
-            <button onclick="checkAuth()">Enter Dashboard</button>
+            <button onclick="checkAuth()">Open Dashboard</button>
         </div>
     </div>
 
@@ -169,21 +132,21 @@
         </div>
 
         <div class="card">
-            <h3>QR Scanner</h3>
+            <h3>Entrance Scanner</h3>
             <div id="video-container">
                 <canvas id="canvas" hidden></canvas>
                 <div id="loadingMessage" style="padding: 20px; text-align: center;">Ready to Scan</div>
             </div>
             <div id="scan-feedback" class="scan-feedback"></div>
-            <button id="start-scan-btn" onclick="startScanner()" style="background: var(--accent-red); color: white;">Open Camera</button>
+            <button id="start-scan-btn" onclick="startScanner()" style="background: var(--accent-red); color: white;">Launch Camera</button>
         </div>
 
         <div class="card">
-            <h3>Register New Sale</h3>
+            <h3>Manual Registration</h3>
             <input type="text" id="man-code" placeholder="M-Pesa Code" style="text-transform: uppercase;">
             <input type="text" id="man-name" placeholder="Full Name">
-            <input type="text" id="man-phone" placeholder="Phone Number">
-            <button id="add-btn" onclick="addTicket()">Confirm Payment & Add to List</button>
+            <input type="text" id="man-phone" placeholder="Phone">
+            <button id="add-btn" onclick="addTicket()">Register Ticket</button>
         </div>
 
         <div class="card">
@@ -206,30 +169,17 @@
 </div>
 
 <script>
-    const SUPABASE_URL = 'https://odfsxslcksvqjcucevhk.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kZnN4c2xja3N2cWpjdWNldmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzUxNDAsImV4cCI6MjA4ODExMTE0MH0.1jNL0TWUNYxsEb3ar8MzGu-gnlzt3w28bgpV42XQcfM';
+    const SUPABASE_URL = 'sb_publishable_i-o4ftTlXFePqgVFnbfo3Q_ngZuOk7Q';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2emNoZ2ZhdWtrdmd0eGl0bnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDAwNDksImV4cCI6MjA4ODExNjA0OX0.LrISCBM7Gb6cTJl52HfkOlXLya_MYwn-dNvPXZCqoaw';
     const ADMIN_PASSWORD = 'FP26'; 
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    function updateOnlineStatus() {
-        const bar = document.getElementById('status-bar');
-        if (navigator.onLine) {
-            bar.className = 'online'; bar.innerText = 'Connected to Database';
-        } else {
-            bar.className = 'offline'; bar.innerText = '⚠️ Offline - Check Internet';
-        }
-    }
-
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
 
     function checkAuth() {
         if (document.getElementById('admin-pass').value === ADMIN_PASSWORD) {
             document.getElementById('auth-view').remove(); 
             document.getElementById('admin-dashboard').classList.add('active');
             document.getElementById('status-bar').style.display = 'block';
-            updateOnlineStatus();
             initApp();
         } else { alert("Access Denied"); }
     }
@@ -238,7 +188,6 @@
 
     async function initApp() {
         await refreshData();
-        // Enable Realtime updates
         supabaseClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => refreshData()).subscribe();
     }
 
@@ -246,57 +195,43 @@
         try {
             const { data, error } = await supabaseClient.from('tickets').select('*').order('id', { ascending: false });
             if (error) throw error;
-            if (data) { ticketList = data; renderDisplay(); }
-        } catch (err) { console.error("Fetch error:", err); }
+            ticketList = data || [];
+            renderDisplay();
+        } catch (err) { console.error("Sync error:", err); }
     }
 
     async function addTicket() {
         const btn = document.getElementById('add-btn');
-        const codeInput = document.getElementById('man-code');
-        const nameInput = document.getElementById('man-name');
-        const phoneInput = document.getElementById('man-phone');
+        const code = document.getElementById('man-code').value.trim().toUpperCase();
+        const name = document.getElementById('man-name').value.trim();
+        const phone = document.getElementById('man-phone').value.trim();
 
-        const code = codeInput.value.trim().toUpperCase();
-        const name = nameInput.value.trim();
-        const phone = phoneInput.value.trim();
-
-        if (!code || !name) return alert("Code and Name are required!");
-
+        if (!code || !name) return alert("Fill required fields!");
         btn.disabled = true;
-        btn.innerText = "Registering...";
 
         try {
             const { error } = await supabaseClient.from('tickets').insert([{ mpesa_code: code, name: name, phone: phone }]);
-            if (error) {
-                if (error.code === '23505') alert(`Code ${code} is already registered!`);
-                else alert("DB Error: " + error.message);
-            } else {
-                codeInput.value = '';
-                nameInput.value = '';
-                phoneInput.value = '';
-            }
-        } catch (err) { 
-            alert("Network Error: Failed to reach database."); 
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Confirm Payment & Add to List";
-        }
+            if (error) throw error;
+            document.getElementById('man-code').value = '';
+            document.getElementById('man-name').value = '';
+            document.getElementById('man-phone').value = '';
+        } catch (err) { alert("Error: " + err.message); }
+        finally { btn.disabled = false; }
     }
 
     async function checkIn(mpesaCode) {
         try {
-            const { error } = await supabaseClient.from('tickets').update({ status: 'entered', entered_at: new Date().toISOString() }).eq('mpesa_code', mpesaCode);
-            if (error) throw error;
-        } catch (err) { alert("Update failed. Check your internet."); }
+            await supabaseClient.from('tickets').update({ status: 'entered', entered_at: new Date().toISOString() }).eq('mpesa_code', mpesaCode);
+        } catch (err) { alert("Check-in failed."); }
     }
 
     function renderDisplay() {
         const tbody = document.getElementById('tickets-body');
         tbody.innerHTML = '';
-        let entered = 0, paid = 0;
+        let entered = 0;
 
         ticketList.forEach(t => {
-            if (t.status === 'entered') entered++; else paid++;
+            if (t.status === 'entered') entered++;
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="color:var(--accent-gold); font-family:monospace;">${t.mpesa_code}</td>
@@ -304,14 +239,14 @@
                 <td>
                     ${t.status === 'paid' ? 
                     `<button onclick="checkIn('${t.mpesa_code}')" style="padding:5px; font-size:0.7rem; margin:0; width:auto;">Grant Entry</button>` : 
-                    `<span style="color:var(--error); font-weight:bold;">IN</span>`}
+                    `<span style="color:var(--success); font-weight:bold;">IN</span>`}
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
         document.getElementById('stat-entered').innerText = entered;
-        document.getElementById('stat-paid').innerText = paid;
+        document.getElementById('stat-paid').innerText = ticketList.length - entered;
         document.getElementById('stat-total').innerText = ticketList.length;
     }
 
@@ -334,8 +269,7 @@
         if (v.readyState === v.HAVE_ENOUGH_DATA) {
             canvasElement.height = v.videoHeight; canvasElement.width = v.videoWidth;
             canvas.drawImage(v, 0, 0, canvasElement.width, canvasElement.height);
-            const imgData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-            const qr = jsQR(imgData.data, imgData.width, imgData.height);
+            const qr = jsQR(canvas.getImageData(0, 0, canvasElement.width, canvasElement.height).data, canvasElement.width, canvasElement.height);
             if (qr) {
                 processCode(qr.data);
                 setTimeout(() => requestAnimationFrame(tick), 3000);
@@ -346,26 +280,22 @@
     }
 
     function processCode(data) {
-        const cleanData = data.trim().toUpperCase();
-        const t = ticketList.find(x => x.mpesa_code === cleanData);
+        const code = data.trim().toUpperCase();
+        const t = ticketList.find(x => x.mpesa_code === code);
         fb.style.display = 'block';
         if (!t) { 
-            fb.style.background = 'var(--error)'; 
-            fb.innerText = `❌ INVALID: ${cleanData}`; 
+            fb.style.background = 'var(--error)'; fb.innerText = `❌ INVALID: ${code}`; 
         } else if (t.status === 'entered') { 
-            fb.style.background = 'var(--warning)'; 
-            fb.innerText = `⚠️ ALREADY IN: ${t.name}`; 
+            fb.style.background = 'var(--warning)'; fb.innerText = `⚠️ ALREADY IN: ${t.name}`; 
         } else { 
-            fb.style.background = 'var(--success)'; 
-            fb.innerText = `✅ VALID: ${t.name}`; 
-            checkIn(cleanData); 
+            fb.style.background = 'var(--success)'; fb.innerText = `✅ VALID: ${t.name}`; 
+            checkIn(code); 
         }
     }
 
     function filterTable() {
         const q = document.getElementById('search-input').value.toLowerCase();
-        const rows = document.querySelectorAll('#tickets-body tr');
-        rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none');
+        document.querySelectorAll('#tickets-body tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none');
     }
 </script>
 </body>
